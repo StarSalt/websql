@@ -62,7 +62,7 @@ public class QueryService {
             sql = StringUtils.trimWhitespace(sql);
             if (StringUtils.isEmpty(sql))
                 throw new ServiceException("请输入SQL!");
-            String[] arr = sql.split("\n");
+            String[] arr = sql.split(";");
             for (String s : arr) {
                 if (StringUtils.isEmpty(s)) {
                     continue;
