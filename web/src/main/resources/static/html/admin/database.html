@@ -1,0 +1,220 @@
+<body>
+    <table id="database_list" style="width:80%;height:80%">
+    </table>
+    <div id="database_list_tb">
+        <div style="margin: 10px">
+            数据库名: <input class="easyui-textbox" data-options="prompt:'数据库名称检索'" id="name"/>
+            url: <input class="easyui-textbox" data-options="prompt:'url检索'" id="url"/>
+            数据库类型: <input class="easyui-combobox" data-options="
+                  url:'/query/allDbTypes',
+                  method:'get',
+                  valueField:'id',
+					textField:'text',
+					panelHeight:'auto'" id="type"/>
+            <a href="#" id="searchDatabase" class="easyui-linkbutton" data-options="iconCls:'icon-search',plain:true">查询</a>
+        </div>
+        <div >
+            <a href="javascript:openAddDbWindow()" id="addDatabase" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">添加</a>
+            <a href="javascript:openUpdateWindow()" id="changeDatabase" class="easyui-linkbutton" data-options="iconCls:'icon-edit',plain:true">修改</a>
+            <a href="javascript:deleteDb()" id="delDatabase" class="easyui-linkbutton" data-options="iconCls:'icon-remove',plain:true">删除</a>
+        </div>
+    </div>
+    <div id="addDatabaseWindow" class="easyui-window" title="Add Database" data-options="iconCls:'icon-save',modal:true,closed:true" style="width:500px;height:500px;padding:5px;">
+        <div class="easyui-layout" data-options="fit:true">
+            <div id="add_database_form" data-options="region:'center'" style="padding:10px;">
+                <input type="hidden" name="id" id="updateId"/>
+                <input atype="text" class="easyui-textbox easyui-validatebox tb" label="数据库名:" data-options="required:true" labelPosition="top" id="dbName" name="dbName" style="width:100%;height:52px">
+                <input atype="text" class="easyui-textbox easyui-validatebox tb" label="数据库URL:" data-options="required:true" labelPosition="top" id="addurl" name="url" style="width:100%;height:52px">
+                <input atype="text" class="easyui-textbox easyui-validatebox tb" label="用户名:" data-options="required:true" labelPosition="top" id="userName" name="userName" style="width:100%;height:52px">
+                <input atype="text" class="easyui-passwordbox easyui-validatebox tb" label="密码:" data-options="required:true" labelPosition="top" id="password" name="password" style="width:100%;height:52px">
+                <input class="easyui-combobox" data-options="
+                  url:'/query/allDbTypes',
+                  method:'get',
+                  valueField:'id',
+					textField:'text',
+					panelHeight:'auto',
+					required:true" label="数据库类型:" labelPosition="top" style="width:100%;height:52px" id="addDbType" name="dbType"/>
+            </div>
+            <div data-options="region:'south',border:false" style="text-align:right;padding:5px 0 0;">
+                <a class="easyui-linkbutton" data-options="iconCls:'icon-ok'" href="javascript:void(0)" onclick="javascript:saveDatabase()" style="width:80px">Ok</a>
+                <a class="easyui-linkbutton" data-options="iconCls:'icon-cancel'" href="javascript:void(0)" onclick="javascript:$('#addDatabaseWindow').window('close')" style="width:80px">Cancel</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        $('#database_list').datagrid({
+            title: '数据库列表',
+            url:'/admin/database/list',
+            columns:[[
+                {field:'id',title:'ID', checkbox: true},
+                {field:'dbName',title:'数据库名称'},
+                {field:'url',title:'url', width:300},
+                {field:'userName',title:'用户名'},
+                {field:'dbType',title:'类型'},
+                {field:'createUserName',title:'创建人'},
+                {field:'createTime',title:'创建时间'},
+                {field:'updateUserName',title:'更新人'},
+                {field:'updateTime',title:'更新时间'}
+            ]],
+            fit: true,
+            idField: 'id',
+            pagination:true,
+            rownumbers:true,
+            checkOnSelect: true,
+            selectOnCheck: true,
+            singleSelect: true,
+            toolbar: '#database_list_tb'
+        });
+
+        /**
+         * toolbar:[{
+                text: '添加',
+                iconCls: 'icon-add',
+                handler: function() {
+                    $.messager.alert("添加数据库!");
+                }
+            },{
+                text: '修改',
+                iconCls: 'icon-edit',
+                handler: function() {
+                    $.messager.alert("修改数据库!");
+                }
+            },{
+                text: '删除',
+                iconCls: 'icon-remove',
+                handler: function(){
+                    $.messager.alert("删除数据库!");
+                }
+            }]
+         * @type {jQuery}
+         */
+
+        var p = $('#database_list').datagrid('getPager');
+        $(p).pagination({
+            pageSize: 10,//每页显示的记录条数，默认为10
+            pageList: [10,20,50,100],//可以设置每页记录条数的列表
+            beforePageText: '第',//页数文本框前显示的汉字
+            afterPageText: '页    共 {pages} 页',
+            displayMsg: '当前显示 {from} - {to} 条记录   共 {total} 条记录',
+        });
+
+        $("#searchDatabase").click(function(){
+            $('#database_list').datagrid("load",{
+                name: $("#name").val(),
+                url: $("#url").val(),
+                type: $("#type").combobox("getValue")
+            });
+        });
+
+        function openAddDbWindow() {
+            $("input[atype=text]").each(function () {
+                $(this).textbox("setText", null);
+                $(this).textbox("setValue", null);
+                $(this).val(null);
+            });
+            $("#addDbType").combobox("setValue", null);
+            $("#updateId").val(null);
+            $('#addDatabaseWindow').window('open');
+        }
+        
+        function openUpdateWindow() {
+            var record = $('#database_list').datagrid('getSelected');
+            if (!record) {
+                $.messager.alert("Error", "请选择一条记录!");
+                return;
+            }
+
+            $("#updateId").val(record.id);
+            setVal("#dbName",record.dbName);
+            setVal("#addurl",record.url);
+            setVal("#userName",record.userName);
+            setVal("#password",null);
+            $("#addDbType").combobox("setValue", record.dbType);
+            $('#addDatabaseWindow').window('open');
+        }
+
+        function  setVal(selector, value) {
+            $(selector).textbox("setText", value);
+            $(selector).textbox("setValue", value);
+            $(selector).val(value);
+        }
+
+        function  deleteDb() {
+            var record = $('#database_list').datagrid('getSelected');
+            if (!record) {
+                $.messager.alert("Error", "请选择一条记录!");
+                return;
+            }
+
+            $.messager.confirm('确认删除', '确认删除这条记录吗?', function(r){
+                if (r){
+                    post("/admin/database/delete/" + record.id, null, function (data) {
+                        if (data.code == 200) {
+                            $('#database_list').datagrid("reload");
+                            $.messager.show({
+                                title: '删除成功',
+                                msg: '删除成功',
+                                showType: 'show'
+                            });
+                        } else {
+                            $.messager.alert('删除失败!',data.message,'error');
+                        }
+                    });
+                } else {
+                    return;
+                }
+            });
+        }
+
+        function saveDatabase() {
+            var dbName = $("#dbName").val();
+            var addurl = $("#addurl").val();
+            var userName = $("#userName").val();
+            var password = $("#password").val();
+            var addDbType = $("#addDbType").combobox("getValue");
+            var id = $("#updateId").val();
+            if (id) {
+                if (!dbName && !addurl && !userName && !password && !addDbType) {
+                    $.messager.alert("Error", "请至少填写一个字段!");
+                    return;
+                }
+            } else {
+                if (!dbName || !addurl || !userName || !password || !addDbType) {
+                    $.messager.alert("Error", "所有字段都必填");
+                    return;
+                }
+            }
+
+            var param = {
+                dbName: dbName,
+                url: addurl,
+                userName: userName,
+                password: password,
+                dbType: addDbType
+            };
+
+
+            if (id) {
+                param.id = id;
+                postjson("/admin/database/update", param,function(data){
+                    if (data.code == 200) {
+                        $('#database_list').datagrid("reload");
+                        $('#addDatabaseWindow').window('close');
+                    } else {
+                        $.messager.alert('更新失败!',data.message,'error');
+                    }
+                });
+            } else {
+                postjson("/admin/database/add", param,function(data){
+                    if (data.code == 200) {
+                        $('#database_list').datagrid("reload");
+                        $('#addDatabaseWindow').window('close');
+                    } else {
+                        $.messager.alert('添加失败!',data.message,'error');
+                    }
+                });
+            }
+        }
+
+    </script>
+</body>

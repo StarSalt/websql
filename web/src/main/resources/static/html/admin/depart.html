@@ -1,0 +1,67 @@
+<body>
+<div class="easyui-panel" style="margin: 5px; padding: 5px">
+    <a href="javascript:addDepart()" class="easyui-linkbutton" data-options="iconCls:'icon-add'">添加</a>
+    <a href="javascript:delDepart()" class="easyui-linkbutton" data-options="iconCls:'icon-remove'">删除</a>
+</div>
+
+</div>
+<div class="easyui-panel" style="padding:5px">
+    <ul id="depart_tree" class="easyui-tree" data-options="url:'/admin/depart/list',method:'get',animate:true,lines:true"></ul>
+</div>
+<script>
+    function  addDepart() {
+        var node = $("#depart_tree").tree('getSelected');
+        if (!node) {
+            $.messager.alert('Error', '请选择一个树节点','Warn');
+        }
+
+        $.messager.prompt('请输入部门名称','请输入机构名称：',function(r) {
+            if (!r) {
+                return;
+            }
+
+            var pid = node.id;
+            var param = {name: r};
+            if (pid != 0)
+                param.parentId = pid;
+
+            postjson("/admin/depart/add", param, function(data) {
+                if (data.code == 200) {
+                    $.messager.show({
+                        title: '添加成功',
+                        msg: '部门添加成功!',
+                        showType: 'show'
+                    });
+                    $("#depart_tree").tree("reload");
+                } else {
+                    $.messager.alert('添加失败!',data.message,'error');
+                }
+            });
+        });
+    }
+
+    function delDepart() {
+        var node = $("#depart_tree").tree('getSelected');
+        if (!node) {
+            $.messager.alert('Error', '请选择一个树节点','Warn');
+        }
+
+        $.messager.confirm('确认删除', '确认删除这条记录吗?', function(r){
+            if (r) {
+                post("/admin/depart/del/" + node.id, {}, function(data) {
+                    if (data.code == 200) {
+                        $.messager.show({
+                            title: '删除成功',
+                            msg: '删除成功!',
+                            showType: 'show'
+                        });
+                        $("#depart_tree").tree("reload");
+                    } else {
+                        $.messager.alert('删除失败!',data.message,'error');
+                    }
+                });
+            }
+        });
+    }
+</script>
+</body>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.singledog.websql.user.mapper.OperateLogMapper">
+
+    <select id="findForList" parameterType="map" >
+        select <include refid="all_columns"/> from operate_log
+        <where>
+            <if test="op.userName != null">
+                and user_name like #{op.userName}
+            </if>
+            <if test="op.userEmail != null">
+                and user_email like #{op.userEmail}
+            </if>
+            <if test="op.eventType != null">
+                and event_type = #{op.eventType}
+            </if>
+        </where>
+    </select>
+
+</mapper>

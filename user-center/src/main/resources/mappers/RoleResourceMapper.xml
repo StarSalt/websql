@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.singledog.websql.user.mapper.RoleResourceMapper">
+
+    <select id="findByRoleIdIn">
+      select r.* from role_resource r left join  db_resource dr on r.resource_id = dr.id
+      where role_id in
+      <foreach collection="list" open="(" index="index" item="item" separator="," close=")">
+          #{item}
+      </foreach>
+        <if test="dbId != null">
+            and r.database_id = #{dbId}
+        </if>
+        and dr.del = 0
+    </select>
+
+</mapper>

@@ -1,0 +1,118 @@
+<body>
+    <table id="dbresource_list_sel" style="width:80%;height:80%">
+    </table>
+    <div id="dbresource_list_tb_sel">
+        <div style="margin: 10px">
+            数据库: <select id="selectDB4Resource_sel" class="easyui-combogrid" style="width:200px" />
+            表名: <input class="easyui-textbox" data-options="prompt:'数据库表名'" style="min-width: 150px" id="tableName_sel"/>
+            是否视图: <select id="isViewSelect_sel" class="easyui-combobox" style="min-width: 100px">
+                        <option value="-1">所有</option>
+                        <option value="0">表</option>
+                        <option value="1">视图</option>
+                    </select>
+            <a href="#" id="searchDbResource_sel" class="easyui-linkbutton" data-options="iconCls:'icon-search',plain:true">查询</a>
+        </div>
+        <div >
+            <a href="javascript:syncTable_sel()" id="syncTable" class="easyui-linkbutton" data-options="iconCls:'icon-reload',plain:true">同步数据库</a>
+        </div>
+
+    </div>
+    <script>
+        $("#selectDB4Resource_sel").combogrid({
+            mode: 'remote',
+            url: '/admin/database/listnopage',
+            idField:'id',
+            textField:'dbName',
+            columns:[[
+                {field:'id',title:'ID', checkbox: true},
+                {field:'dbName',title:'数据库名称'},
+                {field:'url',title:'url'},
+                {field:'userName',title:'用户名'},
+                {field:'dbType',title:'类型'},
+                {field:'createUserName',title:'创建人'},
+                {field:'createTime',title:'创建时间'},
+                {field:'updateUserName',title:'更新人'},
+                {field:'updateTime',title:'更新时间'}
+            ]]
+        });
+
+
+        $('#dbresource_list_sel').datagrid({
+            title: '表/视图列表',
+            url:'/admin/dbresource/listnopage',
+            columns:[[
+                {field:'id',title:'ID', checkbox: true},
+                {field:'dbName',title:'数据库名称'},
+                {field:'dbType',title:'类型'},
+                {field:'tableName',title:'表名'},
+                {field:'isViewStr',title:'是否视图'},
+                {field:'delStatus',title:'删除状态'},
+                {field:'createTime',title:'创建时间',formatter: function (value,row,index) {
+                        if (row.checked) {
+                            $('#dbresource_list_sel').datagrid("selectRow", index);
+                            $('#dbresource_list_sel').datagrid("checkRow", index);
+                        }
+                        return value;
+                    }
+                }
+            ]],
+            fit: true,
+            idField: 'id',
+            pagination:true,
+            rownumbers:true,
+            checkOnSelect: true,
+            selectOnCheck: true,
+            singleSelect: false,
+            toolbar: '#dbresource_list_tb_sel'
+        });
+
+        var p_dbresource_list_sel = $('#dbresource_list_sel').datagrid('getPager');
+        $(p_dbresource_list_sel).pagination({
+            pageSize: 10,//每页显示的记录条数，默认为10
+            pageList: [10,20,50,100],//可以设置每页记录条数的列表
+            beforePageText: '第',//页数文本框前显示的汉字
+            afterPageText: '页    共 {pages} 页',
+            displayMsg: '当前显示 {from} - {to} 条记录   共 {total} 条记录'
+        });
+
+        $("#searchDbResource_sel").click(function(){
+            var record = $('#role_list').datagrid("getSelected");
+            if (!record) {
+                $.messager.alert('Error', '晴选择一条角色!', 'warn');
+                return;
+            }
+            var param = {
+                name: $("#tableName_sel").val(),
+                dbId: $("#selectDB4Resource_sel").combogrid("getValue"),
+                roleId: record.id
+            };
+
+            var select = $("#isViewSelect_sel").val();
+            if (select != -1) {
+                param.isView = select;
+            }
+
+            $('#dbresource_list_sel').datagrid("load", param);
+        });
+
+        function syncTable_sel() {
+            var dbid = $("#selectDB4Resource_sel").combogrid("getValue");
+            if (!dbid) {
+                $.messager.alert("Error","请选择数据库!",'warn');
+                return;
+            }
+            post("/admin/dbresource/sync/" + dbid, {}, function(data) {
+                if (data.code == 200) {
+                    $.messager.show({
+                        title: '同步成功',
+                        msg: '同步成功！',
+                        showType: 'show'
+                    });
+                    $("#dbresource_list_sel").datagrid("reload");
+                } else {
+                    $.messager.alert('同步失败!',data.message,'error');
+                }
+            })
+        }
+    </script>
+</body>

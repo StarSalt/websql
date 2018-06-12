@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.singledog.websql.user.mapper.RoleMapper">
+
+    <select id="searchRoles" parameterType="map">
+        select <include refid="all_columns"/> from role
+        <where>
+            <if test="rsp.departId != null">
+                and depart_id = #{usp.departId}
+            </if>
+            <if test="rsp.roleName != null">
+                and role_name like #{rsp.roleName}
+            </if>
+            <if test="rsp.delete != null">
+                and del = #{rsp.delete}
+            </if>
+            <if test="rsp.roleType != null">
+                and role_type = #{rsp.roleType}
+            </if>
+        </where>
+    </select>
+
+    <update id="softDelete" parameterType="java.lang.Long">
+        update role set del = 1 where id=#{id}
+    </update>
+
+</mapper>

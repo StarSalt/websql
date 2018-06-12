@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.singledog.websql.user.mapper.DepartMapper">
+
+    <select id="searchDepart" parameterType="map">
+        select <include refid="all_columns"/> from depart
+        <where>
+            <if test="name != null">
+                and depart_name like #{name}
+            </if>
+            <if test="delete != null">
+                and del = #{delete}
+            </if>
+        </where>
+        order by depart_name
+    </select>
+
+    <select id="searchSonDepart" parameterType="map">
+        select <include refid="all_columns"/> from depart
+        <where>
+            <if test="pid == null">
+                and parent_id is null
+            </if>
+            <if test="pid != null">
+                and parent_id = #{pid}
+            </if>
+            <if test="name != null">
+                and depart_name like #{name}
+            </if>
+            <if test="delete != null">
+                and del = #{delete}
+            </if>
+        </where>
+    </select>
+
+    <update id="softDelete" parameterType="java.lang.Long">
+        update depart set del = 1 where id=#{id}
+    </update>
+
+</mapper>

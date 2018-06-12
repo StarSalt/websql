@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.singledog.websql.user.mapper.UserMapper">
+
+    <select id="searchUsers" parameterType="map">
+        select <include refid="all_columns"/> from user_info
+        <where>
+            <if test="usp.departId != null">
+                and depart_id = #{usp.departId}
+            </if>
+            <if test="usp.userName != null">
+                and user_name like #{usp.userName}
+            </if>
+            <if test="usp.userEmail != null">
+                and email like #{usp.userEmail}
+            </if>
+            <if test="usp.delete != null">
+                and del = #{usp.delete}
+            </if>
+            <if test="usp.admin != null">
+                and admin = #{usp.admin}
+            </if>
+            <if test="usp.status != null">
+                and status = #{usp.status}
+            </if>
+        </where>
+    </select>
+
+</mapper>

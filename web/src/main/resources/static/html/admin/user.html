@@ -1,0 +1,262 @@
+<body>
+    <table id="user_list" style="width:80%;height:80%">
+    </table>
+    <div id="user_list_tb">
+        <div style="margin: 10px">
+            用户名: <input class="easyui-textbox" data-options="prompt:'用户名'" id="searchUserName"/>
+            邮箱: <input class="easyui-textbox" data-options="prompt:'邮箱'" id="searchUserEmail"/>
+            是否管理员: <select class="easyui-combobox"  id="isAdmin">
+                <option value="-1">全部</option>
+                <option value="0">否</option>
+                <option value="1">是</option>
+            </select>
+            状态: <select id="userStatus" class="easyui-combobox">
+                <option value="-1">全部</option>
+                <option value="0">正常</option>
+                <option value="1">已锁定</option>
+            </select>
+            <a href="#" id="search-user-list" class="easyui-linkbutton" data-options="iconCls:'icon-search',plain:true">查询</a>
+        </div>
+        <div >
+            <a href="javascript:openAddUserWindow()" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">添加</a>
+            <a href="javascript:openUpdateUserWindow()" class="easyui-linkbutton" data-options="iconCls:'icon-edit',plain:true">修改</a>
+            <a href="javascript:lockUser()" class="easyui-linkbutton" data-options="iconCls:'icon-lock',plain:true">锁定/解锁</a>
+            <a href="javascript:grantRoles()" class="easyui-linkbutton" data-options="iconCls:'icon-man',plain:true">角色设置</a>
+        </div>
+    </div>
+    <div id="addUserWindow" class="easyui-window" title="Add User" data-options="iconCls:'icon-save',modal:true,closed:true" style="width:500px;height:500px;padding:5px;">
+        <div class="easyui-layout" data-options="fit:true">
+            <div id="add_user_form" data-options="region:'center'" style="padding:10px;">
+                <input type="hidden" name="id" id="updateUserId"/>
+                <input  class="easyui-textbox easyui-validatebox tb" label="用户名:" data-options="required:true" labelPosition="top" id="createUserName"  style="width:100%;height:52px">
+                <input  class="easyui-textbox easyui-validatebox tb" label="邮箱:" data-options="required:true" labelPosition="top" id="createUserEmail" style="width:100%;height:52px">
+                <input  class="easyui-passwordbox easyui-validatebox tb" label="密码:" data-options="required:true" labelPosition="top" id="createUserPasswd" style="width:100%;height:52px">
+                <select class="easyui-combobox easyui-validatebox tb" label="是否Admin:" data-options="required:true" labelPosition="top" id="createUserAdmin" style="width:100%;height:52px">
+                    <option value="0" selected>否</option>
+                    <option value="1" >是</option>
+                </select>
+            </div>
+            <div data-options="region:'south',border:false" style="text-align:right;padding:5px 0 0;">
+                <a class="easyui-linkbutton" data-options="iconCls:'icon-ok'" href="javascript:void(0)" onclick="javascript:saveUserInfo()" style="width:80px">Ok</a>
+                <a class="easyui-linkbutton" data-options="iconCls:'icon-cancel'" href="javascript:void(0)" onclick="javascript:$('#addUserWindow').window('close')" style="width:80px">Cancel</a>
+            </div>
+        </div>
+    </div>
+    <div id="selectRole4UserWindow" class="easyui-window" title="设置角色" data-options="iconCls:'icon-save',modal:true,closed:true" style="width:1000px;height:550px;padding:5px;">
+        <div class="easyui-layout" data-options="fit:true">
+            <div data-options="href:'/html/admin/role_select.html',region:'center'" style="padding:10px;">
+
+            </div>
+            <div data-options="region:'south',border:false" style="text-align:right;padding:5px 0 0;">
+                <a class="easyui-linkbutton" data-options="iconCls:'icon-ok'" href="javascript:void(0)" onclick="doGrantRoles()" style="width:80px">Ok</a>
+                <a class="easyui-linkbutton" data-options="iconCls:'icon-cancel'" href="javascript:void(0)" onclick="$('#selectRole4UserWindow').window('close')" style="width:80px">Cancel</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        $('#user_list').datagrid({
+            title: '用户列表',
+            url:'/admin/user/list',
+            columns:[[
+                {field:'id',title:'ID', checkbox: true},
+                {field:'userName',title:'用户名'},
+                {field:'email',title:'用户邮箱'},
+                {field:'admin',title:'是否管理员', formatter: function(value,row,index) {
+                    if (value && value == 1)
+                            return "是";
+                    else
+                            return "否";
+                }},
+                {field:'status',title:'状态',formatter: function(value,row,index) {
+                    if (value && value == 1)
+                        return "已锁定";
+                    else
+                        return "正常";
+                }},
+                {field:'lockTime',title:'锁定时间'},
+                {field:'createUserName',title:'创建人'},
+                {field:'createTime',title:'创建时间'},
+                {field:'updateUserName',title:'更新人'},
+                {field:'updateTime',title:'更新时间'}
+            ]],
+            fit: true,
+            idField: 'id',
+            pagination:true,
+            rownumbers:true,
+            checkOnSelect: true,
+            selectOnCheck: true,
+            singleSelect: true,
+            toolbar: '#user_list_tb'
+        });
+
+        var p_list_user = $('#user_list').datagrid('getPager');
+        $(p_list_user).pagination({
+            pageSize: 10,//每页显示的记录条数，默认为10
+            pageList: [10,20,50,100],//可以设置每页记录条数的列表
+            beforePageText: '第',//页数文本框前显示的汉字
+            afterPageText: '页    共 {pages} 页',
+            displayMsg: '当前显示 {from} - {to} 条记录   共 {total} 条记录'
+        });
+
+        $("#search-user-list").click(function(){
+            var param = {
+                userName: $("#searchUserName").val(),
+                userEmail: $("#searchUserEmail").val()
+            };
+            var isAdmin = $("#isAdmin").val();
+            if (isAdmin && isAdmin != -1) {
+                param.admin = isAdmin;
+            }
+            var status = $("#userStatus").val();
+            if (status && status != -1) {
+                param.status = status;
+            }
+            $('#user_list').datagrid("load", param);
+        });
+
+        function  setVal(selector, value) {
+            $(selector).textbox("setText", value);
+            $(selector).textbox("setValue", value);
+            $(selector).val(value);
+        }
+
+        function openAddUserWindow() {
+            setVal("#createUserName", null);
+            setVal("#createUserEmail", null);
+            setVal("#createUserPasswd", null);
+            $("#updateUserId").val(null);
+            $("#createUserAdmin").val(0);
+            $("#addUserWindow").window("open");
+        }
+
+        function openUpdateUserWindow() {
+            var record = $("#user_list").datagrid("getSelected");
+            if (!record) {
+                $.messager.alert('Error', '请选择一条记录!','Error');
+                return ;
+            }
+
+            setVal("#createUserName", record.userName);
+            setVal("#createUserEmail", record.email);
+            setVal("#createUserPasswd", null);
+            $("#updateUserId").val(record.id);
+            $("#createUserAdmin").val(record.admin);
+            $("#addUserWindow").window("open");
+        }
+
+        function grantRoles() {
+            var record = $("#user_list").datagrid("getSelected");
+            if (!record) {
+                $.messager.alert('Error', '请选择一条记录!','Error');
+                return ;
+            }
+            try {
+                $('#role_list_sel').datagrid("clearSelections");
+                $('#role_list_sel').datagrid("clearChecked");
+                $('#role_list_sel').datagrid("load", {userId: record.id});
+            } catch (e) {
+                console.log(e);
+            }
+            $("#selectRole4UserWindow").window("open");
+        }
+
+        function lockUser() {
+            var record = $("#user_list").datagrid("getSelected");
+            if (!record) {
+                $.messager.alert('Error', '请选择一条记录!','Error');
+                return ;
+            }
+
+            var state = record.status;
+            if (state && state == 1)
+                state = 0;
+            else
+                state = 1;
+
+            post("/admin/user/block/" + record.id + "/" + state, {}, function(data) {
+                if (data.code == 200) {
+                    $('#user_list').datagrid("reload");
+                } else {
+                    $.messager.alert('Error', '操作失败！' + data.message, 'error');
+                }
+                $.messager.show({title: '操作成功', msg: '操作成功!',showType: 'show' });
+            });
+        }
+
+        function doGrantRoles() {
+            var record = $("#user_list").datagrid("getSelected");
+            if (!record) {
+                $.messager.alert('Error', '请选择一条记录!','Error');
+                return ;
+            }
+
+            var records = $("#role_list_sel").datagrid("getSelections");
+            var roleIds = [];
+            for (var i = 0; i < records.length; i++) {
+                roleIds.push(records[i].id);
+            }
+
+            postjson("/admin/user/grant/role", {
+                userId: record.id,
+                roleIds: roleIds
+            }, function(data) {
+                if (data.code == 200) {
+                    $('#user_list').datagrid("reload");
+                    $('#selectRole4UserWindow').window('close');
+                } else {
+                    $.messager.alert('授权失败!',data.message,'error');
+                }
+            });
+        }
+
+        function saveUserInfo() {
+            var uname = $("#createUserName").val();
+            var email = $("#createUserEmail").val();
+            var passwd = $("#createUserPasswd").val();
+            var isadmin = $("#createUserAdmin").val();
+
+            var id = $("#updateUserId").val();
+            if (id) {
+                if (!uname && !email && !passwd && !isadmin) {
+                    $.messager.alert('Error', '至少填写一个属性！', 'warn');
+                    return;
+                }
+            } else {
+                if (!uname || !email || !passwd || !isadmin) {
+                    $.messager.alert('Error', '所有属性均必填！', 'warn');
+                    return;
+                }
+            }
+
+            var param = {
+                departId: 0,
+                userName: uname,
+                password: passwd,
+                email: email,
+                admin: isadmin
+            };
+
+            if (id) {
+                param.id = id;
+                postjson("/admin/user/update", param, function (data) {
+                    if (data.code == 200) {
+                        $('#user_list').datagrid("reload");
+                        $('#addUserWindow').window('close');
+                    } else {
+                        $.messager.alert('更新失败!',data.message,'error');
+                    }
+                });
+            } else {
+                postjson("/admin/user/add", param, function (data) {
+                    if (data.code == 200) {
+                        $('#user_list').datagrid("reload");
+                        $('#addUserWindow').window('close');
+                    } else {
+                        $.messager.alert('添加失败!',data.message,'error');
+                    }
+                });
+            }
+        }
+
+    </script>
+</body>

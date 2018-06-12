@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.singledog.websql.user.mapper.DbResourceMapper">
+
+    <update id="updateDelete" parameterType="map">
+        update db_resource set del = #{flag} where id=#{id}
+    </update>
+
+    <select id="searchDbResource" parameterType="map" >
+        select <include refid="all_columns"/> from db_resource
+        <where>
+            <if test="dbId != null">
+                and database_id = #{dbId}
+            </if>
+            <if test="name != null">
+                and table_name like #{name}
+            </if>
+            <if test="isView != null">
+                and is_view = #{isView}
+            </if>
+        </where>
+    </select>
+    <select id="searchDbResourceNoPage" parameterType="map" >
+        select <include refid="all_columns"/> from db_resource
+        <where>
+            <if test="dbId != null">
+                and database_id = #{dbId}
+            </if>
+            <if test="name != null">
+                and table_name like #{name}
+            </if>
+            <if test="isView != null">
+                and is_view = #{isView}
+            </if>
+        </where>
+    </select>
+
+</mapper>

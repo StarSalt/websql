@@ -1,0 +1,218 @@
+<body>
+    <table id="role_list" style="width:80%;height:80%">
+    </table>
+    <div id="rolelist_tb">
+        <div style="margin: 10px">
+            角色名: <input class="easyui-textbox" data-options="prompt:'角色名'" style="width: 200px" id="roleName"/>
+            角色类型: <select data-options="prompt:'角色类型检索'" id="roleType" style="width: 200px" class="easyui-combobox">
+                <option value="-1">所有</option>
+                <option value="0">正常</option>
+                <option value="1">系统</option>
+            </select>
+            <a href="#" id="searchRoleList" class="easyui-linkbutton" data-options="iconCls:'icon-search',plain:true">查询</a>
+        </div>
+        <div >
+            <a href="javascript:addRole()" class="easyui-linkbutton" data-options="iconCls:'icon-add',plain:true">添加</a>
+            <a href="javascript:delRole()" class="easyui-linkbutton" data-options="iconCls:'icon-remove',plain:true">删除</a>
+            <a href="javascript:grantResource('set')" class="easyui-linkbutton" data-options="iconCls:'icon-edit',plain:true">设置资源</a>
+            <a href="javascript:grantResource('append')" class="easyui-linkbutton" data-options="iconCls:'icon-edit',plain:true">添加资源</a>
+        </div>
+
+        <div id="selectResourceWindow" class="easyui-window" title="设置资源" data-options="iconCls:'icon-save',modal:true,closed:true" style="width:1000px;height:550px;padding:5px;">
+            <div class="easyui-layout" data-options="fit:true">
+                <div data-options="href:'/html/admin/dbresource_select.html',region:'center'" style="padding:10px;">
+
+                </div>
+                <div data-options="region:'south',border:false" style="text-align:right;padding:5px 0 0;">
+                    <input type="hidden"  id="isAppendFlag"/>
+                    <a class="easyui-linkbutton" data-options="iconCls:'icon-ok'" href="javascript:void(0)" onclick="doGrantResource()" style="width:80px">Ok</a>
+                    <a class="easyui-linkbutton" data-options="iconCls:'icon-cancel'" href="javascript:void(0)" onclick="$('#selectResourceWindow').window('close')" style="width:80px">Cancel</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        $('#role_list').datagrid({
+            title: '数据库列表',
+            url:'/admin/role/list',
+            columns:[[
+                {field:'id',title:'ID', checkbox: true},
+                {field:'roleName',title:'角色名称'},
+                {field:'roleType',title:'类型'},
+                {field:'createUserName',title:'创建人'},
+                {field:'createTime',title:'创建时间'},
+                {field:'updateUserName',title:'更新人'},
+                {field:'updateTime',title:'更新时间'}
+            ]],
+            fit: true,
+            idField: 'id',
+            pagination:true,
+            rownumbers:true,
+            checkOnSelect: true,
+            selectOnCheck: true,
+            singleSelect: true,
+            toolbar: '#rolelist_tb'
+        });
+
+        var p_role = $('#role_list').datagrid('getPager');
+        $(p_role).pagination({
+            pageSize: 10,//每页显示的记录条数，默认为10
+            pageList: [10,20,50,100],//可以设置每页记录条数的列表
+            beforePageText: '第',//页数文本框前显示的汉字
+            afterPageText: '页    共 {pages} 页',
+            displayMsg: '当前显示 {from} - {to} 条记录   共 {total} 条记录',
+        });
+
+        $("#searchRoleList").click(function(){
+            var param = {
+                roleName: $("#roleName").val()
+            };
+            var type = $("#roleType").val();
+            if (type && type != -1) {
+                param.roleType = type;
+            }
+            $('#role_list').datagrid("load", param);
+        });
+
+        function addRole() {
+            $.messager.prompt('添加角色','请输入角色名称：', function(r) {
+                if (r) {
+                    post("/admin/role/add", {
+                        roleName: r
+                    }, function(data) {
+                        if (data.code == 200) {
+                            $.messager.show({
+                                title: '添加成功',
+                                msg: '创建成功!',
+                                showType: 'show'
+                            });
+
+                            $('#role_list').datagrid("reload");
+                        } else {
+                            $.messager.alert('Error', '添加失败,' + data.message, 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        function delRole() {
+            var record = $('#role_list').datagrid("getSelected");
+            if (!record) {
+                $.messager.alert('Error', '晴选择一条记录!', 'warn');
+                return;
+            }
+
+            $.messager.confirm('确认删除','确认删除此记录吗?', function(r) {
+                if (r) {
+                    post("/admin/role/del/" + record.id, {}, function(data) {
+                        if (data.code == 200) {
+                            $.messager.show({
+                                title: '删除成功',
+                                msg: '删除成功!',
+                                showType: 'show'
+                            });
+
+                            $('#role_list').datagrid("reload");
+                        } else {
+                            $.messager.alert('Error', '删除失败,' + data.message, 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        function grantResource(append) {
+            var record = $('#role_list').datagrid("getSelected");
+            if (!record) {
+                $.messager.alert('Error', '晴选择一条记录!', 'warn');
+                return;
+            }
+            $("#isAppendFlag").val(append);
+            try {
+                $('#dbresource_list_sel').datagrid("clearSelections");
+                $('#dbresource_list_sel').datagrid("clearChecked");
+                $('#dbresource_list_sel').datagrid("load", {roleId: record.id});
+            } catch (e) {
+                console.log(e);
+            }
+            $("#selectResourceWindow").window("open");
+        }
+
+        function  getChecked(records) {
+            return [];
+            var r = [];
+            if (records && records.length > 0) {
+                for (var i = 0; i < records.length;i ++) {
+                    var c = records[i];
+                    if (c.checked) {
+                        r.push(c);
+                    }
+                }
+            }
+            return r;
+        }
+
+        function doGrantResource() {
+            var record = $('#role_list').datagrid("getSelected");
+            if (!record) {
+                $.messager.alert('Error', '晴选择一条角色!', 'warn');
+                return;
+            }
+            var append = $("#isAppendFlag").val();
+            var param = {
+                roleId: record.id
+            };
+
+            if ('append' == append) {
+                param.append = true;
+            } else {
+                param.append = false;
+            }
+
+            var resourceIds = [];
+            var resourceRecords = $("#dbresource_list_sel").datagrid("getSelections");
+            var checked = getChecked($("#dbresource_list_sel").datagrid("getRows"));
+            if (!resourceRecords) {
+                resourceRecords = [];
+            }
+
+            if (checked && checked.length > 0) {
+                for (var j = 0; j < checked.length; j++) {
+                    resourceRecords.push(checked[j]);
+                }
+            }
+
+            if (param.append ) {
+                if (!resourceRecords || resourceRecords.length == 0) {
+                    $.messager.alert('Error', '晴选择一条资源!', 'warn');
+                    return;
+                }
+            }
+
+            for (var i = 0; i < resourceRecords.length; i++) {
+                resourceIds.push(resourceRecords[i].id);
+            }
+
+            param.resourceIds = resourceIds;
+            postjson("/admin/role/grant", param, function(data) {
+                if (data.code == 200) {
+                    $.messager.show({
+                        title: '设置成功',
+                        msg: '设置成功!',
+                        showType: 'show'
+                    });
+
+                    $('#role_list').datagrid("reload");
+                } else {
+                    $.messager.alert('Error', '设置失败,' + data.message, 'error');
+                }
+                $("#isAppendFlag").val(null);
+                $("#selectResourceWindow").window("close");
+            });
+        }
+
+    </script>
+</body>

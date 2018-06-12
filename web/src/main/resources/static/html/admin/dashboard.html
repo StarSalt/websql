@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSql - Online database query system</title>
+    <link rel="stylesheet" type="text/css" href="/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/css/websql.css">
+    <script type="text/javascript" src="/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/websql.js"></script>
+    <script type="text/javascript" src="/jquery.easyui.min.js"></script>
+</head>
+<body class="easyui-layout">
+
+<div data-options="region:'north'" style="border-top: none;">
+    <div style="height: inherit; border: none">
+        <span style="float: left; margin-left: 50px;"><h2><a href="/" style="text-decoration: none">Online Database Query System</a></h2></span>
+            <span style="float: right; margin-right: 50px;"><h2>
+                <a href="#" id="uname" class="easyui-menubutton" style="font-size: 20px"
+                   data-options="menu:'#mm2'"></a>
+            </h2></span>
+    </div>
+</div>
+<div id="mm2" style="width:100px;">
+    <div id="changePwd">修改密码</div>
+    <div id="manage" style="display: none">管理</div>
+    <div id="logout">退出</div>
+</div>
+<div id="changePasswordWindow" class="easyui-window" title="Change Password"
+     data-options="iconCls:'icon-lock',modal:true,closed:true" style="width:400px;height:300px;padding:5px;">
+    <div class="easyui-layout" data-options="fit:true">
+        <div data-options="region:'center'" style="padding:10px;">
+            <input class="easyui-passwordbox easyui-validatebox tb" label="当前密码:" data-options="required:true" labelPosition="top" id="currentPassword" style="width:100%;height:52px">
+            <input class="easyui-passwordbox easyui-validatebox tb" label="新密码:" data-options="required:true" labelPosition="top" id="newPassword" style="width:100%;height:52px">
+        </div>
+        <div data-options="region:'south',border:false" style="text-align:right;padding:5px 0 0;">
+            <a class="easyui-linkbutton" data-options="iconCls:'icon-ok'" href="javascript:void(0)" onclick="javascript:updatePassword()" style="width:80px">Ok</a>
+            <a class="easyui-linkbutton" data-options="iconCls:'icon-cancel'" href="javascript:void(0)" onclick="javascript:$('#changePasswordWindow').window('close')" style="width:80px">Cancel</a>
+        </div>
+    </div>
+</div>
+<div data-options="region:'west',split:true" title="" style="width:200px;">
+    <div class="easyui-panel" style="height: 100%;">
+        <div class="list-group">
+            <a class="list-group-item" res="/html/admin/database.html">数据库管理</a>
+            <a class="list-group-item" res="/html/admin/dbresource.html">数据库资源管理</a>
+            <a class="list-group-item" res="/html/admin/depart.html">部门管理</a>
+            <a class="list-group-item" res="/html/admin/role.html">角色管理</a>
+            <a class="list-group-item" res="/html/admin/user.html">用户管理</a>
+            <a class="list-group-item" res="/html/admin/qhistory.html">查询历史</a>
+            <a class="list-group-item" res="/html/admin/oplog.html">操作日志</a>
+        </div>
+    </div>
+</div>
+<div data-options="region:'center',iconCls:'icon-ok'">
+    <div id="tt" class="easyui-tabs" data-options="tools:'#tab-tools'" style="width: 100%; height: 100%">
+    </div>
+</div>
+
+<script>
+    var user = JSON.parse(localStorage.getItem("uname"));
+    $("#uname").html(user["userName"]);
+
+    if (user.admin && user.admin == 1) {
+        $("#manage").css("display","block");
+    }
+    $("#manage").click(function () {
+        window.location.href="/admin";
+    });
+
+    $("#logout").click(function () {
+        window.location.href = "/user/logout";
+    });
+
+    function clear() {
+        $("#currentPassword").textbox("setText", null);
+        $("#currentPassword").textbox("setValue", null);
+        $("#newPassword").textbox("setText", null);
+        $("#newPassword").textbox("setValue", null);
+    }
+
+    $(".list-group a").click(function () {
+        $(".list-group a").removeClass("active");
+       $(this).toggleClass("active");
+        var title = $(this).html();
+
+        var exists = $("#tt").tabs('getTab', title);
+        if (exists) {
+            $("#tt").tabs('select', title)
+            return;
+        }
+
+        var res = $(this).attr("res");
+        $('#tt').tabs('add',{
+            title: title,
+            href: res,
+            closable: true
+        });
+    });
+
+    $("#changePwd").click(function() {
+        clear();
+        $("#changePasswordWindow").window("open");
+    });
+
+    function updatePassword() {
+        var current = $("#currentPassword").val();
+        var newP = $("#newPassword").val();
+        if (!current || !newP) {
+            $.messager.alert('Error', "请输入密码!", 'error');
+            return;
+        }
+
+        postjson("/user/updatePassword", {
+            currentPassword: current,
+            newPassword: newP
+        }, function(data) {
+            if (data.code == 200) {
+                $.messager.show({
+                    title: '修改成功',
+                    msg: '修改成功， 请重新登录!',
+                    showType: 'show'
+                });
+
+                setTimeout(function () {
+                    window.location.href="/login.html";
+                }, 3000);
+            } else {
+                $.messager.alert('修改失败!', data.message, 'error');
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

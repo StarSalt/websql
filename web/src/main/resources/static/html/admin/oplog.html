@@ -1,0 +1,91 @@
+<body>
+    <table id="oplog_list" style="width:80%;height:80%">
+    </table>
+    <div id="oplog_list_tb">
+        <div style="margin: 10px">
+            用户名: <input class="easyui-textbox" data-options="prompt:'用户名'" id="oplog_username"/>
+            邮箱: <input class="easyui-textbox" data-options="prompt:'用户邮箱'" id="oplog_email"/>
+            事件类型: <select class="easyui-combobox" id="oplog_eventType">
+            <option value="" selected>全部</option>
+            <option value='ADD_DEPART'>添加部门</option>
+            <option value='UPDATE_DEPART'>更新部门</option>
+            <option value='DELETE_DEPART'>删除部门</option>
+            <option value='ADD_DATABASE'>添加数据库</option>
+            <option value='DELETE_DATABASE'>删除数据库</option>
+            <option value='UPDATE_DATABASE'>更新数据库</option>
+            <option value='UPDATE_TABLE_DEL_STATE'>更新表删除状态</option>
+            <option value='SYNC_RESOURCE'>同步数据库表信息</option>
+            <option value='CREATE_USER'>创建用户</option>
+            <option value='BLOCK_UNBLOCK_USER'>LOCK/UNLOCK 用户</option>
+            <option value='DELETE_USER'>删除用户</option>
+            <option value='QUERY_USER_DETAIL'>查看用户详情</option>
+            <option value='UPDATE_USER'>更新用户</option>
+            <option value='CREATE_ROLE'>创建角色</option>
+            <option value='CREATE_ANONYMOUS_ROLE'>创建匿名角色</option>
+            <option value='DELETE_ROLE'>删除角色</option>
+            <option value='UPDATE_ROLE'>更新角色</option>
+            <option value='GRANT_RESOURCE_TO_ROLE'>赋予角色资源</option>
+            <option value='MERGE_RESOURCE_TO_ROLE'>添加角色资源</option>
+            <option value='GRANT_ROLE_TO_USER'>赋予用户角色</option>
+            <option value='REVOKE_ROLE_FROM_USER'>回收用户角色</option>
+            <option value='COLLECT_SQL'>收藏SQL</option>
+            <option value='QUERY_SQL'>查询SQL</option>
+            <option value='LOGIN'>登录</option>
+            <option value='LOGOUT'>退出登录</option>
+            <option value='UPDATE_PASSWORD'>修改密码</option>
+        </select>
+            <a href="#" id="searchoplog" class="easyui-linkbutton" data-options="iconCls:'icon-search',plain:true">查询</a>
+        </div>
+
+    </div>
+    <script>
+        $('#oplog_list').datagrid({
+            title: '操作日志',
+            url:'/admin/oplog/list',
+            columns:[[
+                {field:'id',title:'ID', checkbox: true},
+                {field:'userName',title:'用户名'},
+                {field:'userEmail',title:'用户邮箱'},
+                {field:'eventType',title:'数据库'},
+                {field:'eventName',title:'表名'},
+                {field:'params',title:'参数', width:500, formatter: function (value,row,index) {
+                    return "<span style='word-break: break-all; word-wrap: break-word; white-space: pre-wrap'>"+value+"</span>"
+                }},
+                {field:'remark',title:'备注'},
+                {field:'opTime',title:'操作时间'}
+            ]],
+            fit: true,
+            idField: 'id',
+            pagination:true,
+            rownumbers:true,
+            checkOnSelect: true,
+            selectOnCheck: true,
+            singleSelect: true,
+            toolbar: '#oplog_list_tb'
+        });
+
+        var p_oplog_list = $('#oplog_list').datagrid('getPager');
+        $(p_oplog_list).pagination({
+            pageSize: 30,//每页显示的记录条数，默认为10
+            pageList: [30,50,100],//可以设置每页记录条数的列表
+            beforePageText: '第',//页数文本框前显示的汉字
+            afterPageText: '页    共 {pages} 页',
+            displayMsg: '当前显示 {from} - {to} 条记录   共 {total} 条记录'
+        });
+
+        $("#searchoplog").click(function(){
+            var param = {
+                eventType: $("#oplog_eventType").val(),
+                userName: $("#oplog_username").val(),
+                userEmail: $("#oplog_email").val()
+            };
+
+            var select = $("#isViewSelect").val();
+            if (select != -1) {
+                param.isView = select;
+            }
+
+            $('#oplog_list').datagrid("load", param);
+        });
+    </script>
+</body>

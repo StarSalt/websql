@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSql - Online database query system</title>
+    <link rel="stylesheet" type="text/css" href="/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/themes/icon.css">
+    <!--<link rel="stylesheet" type="text/css" href="/css/fixed-table.css">-->
+    <script type="text/javascript" src="/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/websql.js"></script>
+    <!--<script type="text/javascript" src="/js/fixed-table.js"></script>-->
+    <script type="text/javascript" src="/jquery.easyui.min.js"></script>
+
+    <style type="text/css">
+        #tables {
+            list-style: none;
+            padding-left: 5px;
+        }
+
+        #tables li {
+            cursor: pointer;
+        }
+
+        #tables li:hover {
+            cursor: pointer;
+            color: #0000ff;
+            font-size: 13px;
+        }
+
+        .result_div {
+            padding-left: 2px;
+            margin-top: 5px;
+            padding-top: 5px;
+            box-sizing: border-box;
+            font-family: Verdana,Arial,Helvetica,sans-serif;
+            border-spacing: 0;
+        }
+
+        .td_head {
+            padding: 4px;
+            font-weight: 700;
+        }
+
+        .td_row_even {
+            padding: 4px;
+            background-color: #F6F4F0;
+        }
+
+        .padding4 {
+            padding: 4px;
+        }
+
+        .td_row_odd {
+            padding: 4px;
+            background-color: #FFF;
+        }
+
+        table, td, th {
+            border: 1px solid gray;
+            border-spacing: 0;
+        }
+    </style>
+
+</head>
+<body class="easyui-layout">
+
+    <div data-options="region:'north'" style="border-top: none;">
+        <div style="height: inherit; border: none">
+            <span style="float: left; margin-left: 50px;"><h2><a href="/" style="text-decoration: none">Online Database Query System</a></h2></span>
+            <span style="float: right; margin-right: 50px;">
+                <h2>
+                    <a href="#" id="uname" class="easyui-menubutton" style="font-size: 20px"
+                       data-options="menu:'#mm2'"></a>
+                </h2>
+            </span>
+        </div>
+    </div>
+    <div id="mm2" style="width:100px;">
+        <div id="changePwd">修改密码</div>
+        <div id="manage" style="display: none">管理</div>
+        <div id="logout">退出</div>
+    </div>
+    <div id="contextMenu" class="easyui-menu" data-options="onClick:menuHandler" style="width:120px; display: none">
+        <div data-options="name:'search',iconCls:'icon-search'">search</div>
+    </div>
+    <div id="changePasswordWindow" class="easyui-window" title="Change Password"
+         data-options="iconCls:'icon-lock',modal:true,closed:true" style="width:400px;height:300px;padding:5px;">
+        <div class="easyui-layout" data-options="fit:true">
+            <div data-options="region:'center'" style="padding:10px;">
+                <input class="easyui-passwordbox easyui-validatebox tb" label="当前密码:" data-options="required:true" labelPosition="top" id="currentPassword" style="width:100%;height:52px">
+                <input class="easyui-passwordbox easyui-validatebox tb" label="新密码:" data-options="required:true" labelPosition="top" id="newPassword" style="width:100%;height:52px">
+            </div>
+            <div data-options="region:'south',border:false" style="text-align:right;padding:5px 0 0;">
+                <a class="easyui-linkbutton" data-options="iconCls:'icon-ok'" href="javascript:void(0)" onclick="javascript:updatePassword()" style="width:80px">Ok</a>
+                <a class="easyui-linkbutton" data-options="iconCls:'icon-cancel'" href="javascript:void(0)" onclick="javascript:$('#changePasswordWindow').window('close')" style="width:80px">Cancel</a>
+            </div>
+        </div>
+    </div>
+    <div data-options="region:'west',split:true" title="切换数据库" style="width:200px;">
+        <div id="selectDatabaseTools" style="padding-top: 10px; position: fixed; background: white; border-radius: 5px; ">
+            <input id="currentDatabase" class="panel-header easyui-combobox"
+                   name="currentDatabase"
+                   data-options="
+					url:'/query/allDbs',
+					method:'get',
+					valueField:'id',
+					textField:'text',
+					panelHeight:'auto',
+					onSelect:function(record) {
+					    loadTables(record);
+					}
+			">
+        </div>
+        <div style="margin-top: 50px; ">
+            <ul id="tables">
+
+            </ul>
+        </div>
+    </div>
+    <div id="collectWindow" class="easyui-window" title="收藏" data-options="modal:true,closed:true,iconCls:'icon-save'" style="width:500px;height:330px;padding:10px;">
+        <div data-options="region:'center'" style="padding:10px;">
+            <div style="margin-bottom:20px">
+                <input id="collectTitle" class="easyui-textbox easyui-validatebox" label="Title:" labelPosition="top" data-options="required:true" style="width:100%;height:52px"/>
+            </div>
+            <div style="margin-bottom:20px">
+                <input id="collectSql" class="easyui-textbox easyui-validatebox" label="Sql:" labelPosition="top" data-options="required:true" multiline="true" style="width:100%;height:120px">
+            </div>
+        </div>
+        <div data-options="region:'south',border:false" style="text-align:right;padding:5px 0 0;">
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-ok'" onclick="onCollect()">收藏</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'" onclick="$('#collectWindow').window('close')">取消</a>
+        </div>
+    </div>
+    <div data-options="region:'east',split:true,collapsed:true" title="收藏夹" style="width:150px;">
+        <div style="margin-top: 10px">
+            <input id="collectGridText" style="width:100%"/>
+        </div>
+        <div style="margin-top: 10px">
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-filter'" onclick="queryCollection()">查询</a>
+        </div>
+        <div id="collectedSql" style="margin-top: 20px; white-space:pre-wrap;word-wrap : break-word"></div>
+    </div>
+    <div data-options="region:'center',title:'查询窗口',iconCls:'icon-ok'">
+        <div id="query_tabs" class="easyui-tabs" data-options="tools:'#tab-tools'" style="width:100%;height:100%">
+        </div>
+        <div id="tab-tools">
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-add'" onclick="addPanel()"></a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-remove'" onclick="removePanel()"></a>
+        </div>
+    </div>
+<script>
+    var user = JSON.parse(localStorage.getItem("uname"));
+    $("#uname").html(user["userName"]);
+
+    if (user.admin && user.admin == 1) {
+        $("#manage").css("display","block");
+    }
+
+    $("#manage").click(function () {
+        window.location.href="/admin";
+    });
+
+    $("#logout").click(function () {
+        window.location.href = "/user/logout";
+    });
+
+    $("#collectGridText").combogrid({// http://www.jeasyui.net/plugins/171.html
+        panelWidth:600,
+        panelHeight: 300,
+        url: '/query/listCollect',
+        idField:'sql',
+        textField:'title',
+        mode:'remote',
+        fitColumns:true,
+        columns:[[
+            {field:'title',title:'标题', width:80, formatter: function(value, row, index) {
+                return "<span style=\"white-space:pre-wrap;word-wrap : break-word\">" + value + "</span>";
+            }},
+            {field:'sql',title:'SQL',align:'left', width:100, formatter: function(value, row, index) {
+                return "<span style=\"white-space:pre-wrap;word-wrap : break-word\">" + value + "</span>";
+            }},
+            {field:'useCount',title:'使用次数',align:'right',width:30},
+            {field:'createTime',title:'收藏时间',width:60}
+        ]],
+        onChange: function(nv, oldv) {
+            var sql = $("#collectGridText").combogrid('getValue');
+            if (!sql) {
+                return;
+            }
+
+            $("#collectedSql").html("<code>" + sql + "</code>");
+        }
+    });
+
+    $("input[name='mode']").change(function(){
+        var mode = $(this).val();
+        $('#collectGridText').combogrid({
+            mode: mode
+        });
+    });
+
+    function clear() {
+        clearText("#currentPassword");
+        clearText("#newPassword");
+    }
+
+    function clearText(id) {
+        $(id).textbox("setText", null);
+        $(id).textbox("setValue", null);
+    }
+
+    function clearCollectWindow() {
+        clearText("#collectTitle");
+        clearText("#collectSql");
+    }
+
+    $("#changePwd").click(function() {
+        clear();
+        $("#changePasswordWindow").window("open");
+    });
+
+    function menuHandler(item){
+        if (!item) {
+            return;
+        }
+
+        if (item == 'search') {
+            var tab = $("#query_tabs").tabs('getSelected');
+            var idx = index = $('#tt').tabs('getTabIndex',tab);
+            doQuery(null, idx);
+        }
+    }
+
+  /*  function keyPressed(event, textarea) {
+        if (event.ctrlKey && event.keyCode == 10) {
+            doCurrentSqlQuery(textarea);
+        } else if (event.shiftKey && event.keyCode == 13) {
+            doSelectionQuery(textarea);
+        }
+    }
+
+    function doCurrentSqlQuery(textarea) {
+        var sql = $(textarea).val();
+
+    }
+
+    function doSelectionQuery(textarea) {
+
+    }*/
+
+    /*$(function(){
+        $(document).bind('contextmenu',function(e){
+            e.preventDefault();
+            $('#contextMenu').menu('show', {
+                left: e.pageX,
+                top: e.pageY
+            });
+        });
+    });*/
+
+    //设置文本选中高亮
+    function setTextSelected(inputDom, startIndex, endIndex)
+    {
+        if (inputDom.setSelectionRange)
+        {
+            inputDom.setSelectionRange(startIndex, endIndex);
+        }
+        else if (inputDom.createTextRange) //IE
+        {
+            var range = inputDom.createTextRange();
+            range.collapse(true);
+            range.moveStart('character', startIndex);
+            range.moveEnd('character', endIndex - startIndex-1);
+            range.select();
+        }
+        inputDom.focus();
+    }
+
+    //获取选中文本
+    function getSelectedText(inputDom){
+        setTextSelected(inputDom,inputDom.selectionStart,
+                inputDom.selectionEnd);
+        if (document.selection) //IE
+        {
+            return document.selection.createRange().text;
+        }
+        else {
+            return inputDom.value.substring(inputDom.selectionStart,
+                    inputDom.selectionEnd);
+        }
+    }
+
+    function updatePassword() {
+        var current = $("#currentPassword").val();
+        var newP = $("#newPassword").val();
+        if (!current || !newP) {
+            $.messager.alert('Error', "请输入密码!", 'error');
+            return;
+        }
+
+        postjson("/user/updatePassword", {
+            currentPassword: current,
+            newPassword: newP
+        }, function(data) {
+            if (data.code == 200) {
+                $.messager.show({
+                    title: '修改成功',
+                    msg: '修改成功， 请重新登录!',
+                    showType: 'show'
+                });
+
+                setTimeout(function () {
+                    window.location.href="/login.html";
+                }, 3000);
+            } else {
+                $.messager.alert('修改失败!', data.message, 'error');
+            }
+        });
+    }
+
+    var index = 0;
+    function addPanel(){
+        index++;
+        $('#query_tabs').tabs('add',{
+            title: '查询窗口'+index,
+            href: '/html/selectTab.html',
+            closable: true,
+            onLoad: function() {
+                $("a[qtype=query_btn][index='0']").attr("index", index);
+                $("a[qtype=collect_btn][index='0']").attr("index", index);
+                $("#sqltext").attr({"id": "sqltext" + index, "index": index});
+                $("#sqlresult").attr("id", "sqlresult" + index);
+                $("#result_body_title").attr("id", "result_body_title" + index);
+                $("#result_body_tbody").attr("id", "result_body_tbody" + index);
+            }
+        });
+    }
+    function removePanel(){
+        var tab = $('#query_tabs').tabs('getSelected');
+        if (tab){
+            var index = $('#query_tabs').tabs('getTabIndex', tab);
+            $('#query_tabs').tabs('close', index);
+        }
+    }
+
+    $(function() {
+        addPanel();
+    });
+
+    function loadTables(record) {
+        $("#tables").empty();
+        var dbid = record.id;
+        if (dbid && !isNaN(dbid)) {
+            get("/query/tables/" + dbid, {}, function(data) {
+                if (data.code == 200) {
+                    var tableNames = data.data;
+                    if (tableNames && tableNames.length > 0) {
+                        for (var i in tableNames) {
+                            $("#tables").append($("<li>" + tableNames[i] + "</li>"));
+                        }
+                    }
+                } else {
+                    $.messager.alert("Error", data.message, "error");
+                }
+            });
+        }
+    }
+
+    function getSel(id) {
+        // obtain the object reference for the <textarea>
+        var txtarea = document.getElementById(id);
+        // obtain the index of the first selected character
+        var start = txtarea.selectionStart;
+        // obtain the index of the last selected character
+        var finish = txtarea.selectionEnd;
+        // obtain the selected text
+        var sel = txtarea.value.substring(start, finish);
+        // do something with the selected content
+        console.log("selected sql is : " + sel);
+        return sel;
+    }
+
+    function getSel2(dom) {
+        return getSelectedText(dom);
+    }
+
+    /**
+     * 真正执行收藏
+     */
+    function onCollect() {
+        var title = $("#collectTitle").val();
+        var sql = $("#collectSql").val();
+        if (!title || !sql) {
+            $.messager.alert('Error', '请输入标题和SQL!', 'error');
+            return;
+        }
+
+        postjson("/query/collect", {
+            title: title,
+            sql: sql
+        }, function (data) {
+            if (data.code == 200) {
+                $.messager.show({
+                    title:'收藏成功',
+                    msg:'收藏成功',
+                    showType:'show'
+                });
+                var g = $('#collectGridText').combogrid('grid');	// get datagrid object
+                g.datagrid('reload');	// get the selected row
+                $("#collectWindow").window("close");
+            } else {
+                $.messager.alert('Error', data.message, 'warn');
+            }
+        });
+    }
+
+    /**
+     * 打开收藏窗口
+     * @param btn
+     */
+    function doCollect(btn) {
+        clearCollectWindow();
+
+        var idx;
+        if (btn) {
+            idx = $(btn).attr("index");
+        }
+
+        var sql = $("#sqltext" + idx).val();
+
+        var selected = getSel2($("#sqltext" + idx)[0]);
+        if (selected && selected.length > 0) {
+            sql = selected;
+        }
+
+        if (sql) {
+            $("#collectSql").textbox("setText", sql);
+            $("#collectSql").textbox("setValue", sql);
+        }
+        $("#collectWindow").window("open");
+    }
+
+    function getTabIndex() {
+        var title = $('.tabs-selected').text();
+        return title.replace('查询窗口','');
+    }
+
+    function queryCollection() {
+        var sql = $("#collectGridText").combogrid('getValue');
+        if (!sql) {
+            $.messager.alert('Error', '请选择SQL!', 'error');
+            return;
+        }
+
+        var did = $("#currentDatabase").val();
+        if (!did || isNaN(did)) {
+            $.messager.alert('Error', '请选择数据库!', 'error');
+            return;
+        }
+
+        var g = $('#collectGridText').combogrid('grid');	// get datagrid object
+        var r = g.datagrid('getSelected');	// get the selected row
+        var cid = r["id"];
+
+        var idx = getTabIndex();
+
+        postjson("/query/exec", {
+            did: did,
+            sql: sql,
+            cid: cid
+        }, function (data){
+            if (data.code == 200) {
+                loadDataIntoTable(data.data, idx);
+                var g = $('#collectGridText').combogrid('grid');	// get datagrid object
+                g.datagrid('reload');	// get the selected row
+            } else {
+                $("#result_body_title" + idx).html("<h6>" + data.message + "</h6>");
+                $("#result_body_tbody" + idx).empty();
+            }
+        });
+    }
+
+    function doQuery(btn, ii) {
+        var idx;
+        if (btn) {
+            idx = $(btn).attr("index");
+        } else {
+            idx = ii;
+        }
+        var sql = $("#sqltext" + idx).val();
+
+        var selected = getSel2($("#sqltext" + idx)[0]);
+        if (selected && selected.length > 0) {
+            sql = selected;
+            selected = 1;
+        }
+
+        var did = $("#currentDatabase").val();
+        if (!did || isNaN(did)) {
+            $.messager.alert('Error', '请选择数据库!', 'error');
+            return;
+        }
+
+        if (!sql) {
+            $.messager.alert('Error', '请输入SQL');
+            return;
+        }
+
+//        $(btn).attr("disabled", "disabled");
+        postjson("/query/exec", {
+            did: did,
+            sql: sql,
+            sel: selected
+        }, function (data){
+            if (data.code == 200) {
+                loadDataIntoTable(data.data, idx);
+            } else {
+                $("#result_body_title" + idx).html("<h6>" + data.message + "</h6>");
+                $("#result_body_tbody" + idx).empty();
+            }
+        });
+    }
+
+    function loadDataIntoTable(listdata, idx) {
+        if (!listdata || listdata.length == 0) {
+            $("#result_body_title" + idx).html("<h6>No data found !</h6>");
+            $("#result_body_tbody" + idx).empty();
+            return;
+        }
+
+        var body = $("#result_body_tbody" + idx);
+        var header = $("#result_body_title" + idx);
+        body.empty();
+        header.empty();
+        var title = newTr(-3, idx);//title
+        for (var i = 0; i < listdata.length; i++) {
+            var row = listdata[i];
+            var tr = newTr(i, idx);
+            for (var j in row) {
+                var cell = row[j];
+                if (i == 0) {
+                    title.append(spellHeaderTD(cell));
+                }
+
+                tr.append(spellBodyTD(cell, i));
+            }
+
+            if (i == 0) {
+                title.attr("onclick","");
+                header.append(title);
+            }
+            body.append(tr);
+        }
+
+//        fixTable(document.getElementById("sqlresult" + index));
+    }
+
+    function colorful(rid) {
+        var idx = getTabIndex();
+        var divClass = $("tr[rid="+rid+"][tid="+idx+"] td").first().attr("class");
+        if (divClass == "td_head")
+                return;
+
+        var oldClass = $("tr[sel=sel][tid="+idx+"]").attr("divClass");
+        $("tr[sel=sel][tid="+idx+"] td").each(function(){
+            $(this).removeClass();
+            $(this).addClass(oldClass);
+        });
+        $("tr[sel=sel][tid="+idx+"]").removeClass();
+        $("tr[sel=sel][tid="+idx+"]").removeAttr("sel");
+
+        $("tr[rid="+rid+"][tid="+idx+"] td").each(function(){
+            $(this).removeClass();
+            $(this).addClass("padding4");
+        });
+
+        var row = $("tr[rid="+rid+"][tid="+idx+"]");
+        row.attr({divClass: divClass, sel: 'sel'});
+        row.attr("class", "datagrid-row datagrid-row-checked datagrid-row-selected");
+    }
+
+    function newTr(rowindex, tabid) {
+        if (!rowindex) {
+            rowindex = -1;
+        }
+        return $("<tr rid='" + rowindex + "' tid='" + tabid + "' onclick='colorful(" + rowindex + ")'></tr>");
+    }
+
+    function spellBodyTD(cell, rowindex) {
+        var cls;
+        if (rowindex % 2 == 0) {
+            cls = "td_row_odd";
+        } else {
+            cls = "td_row_even";
+        }
+        return $("<td class='" + cls + "'><div>" + cell.v + "</div></td>") ;
+//        return $("<td><div class='" + cls + "'>" + cell.v + "</div></td>") ;
+    }
+
+    function spellHeaderTD(cell) {
+        return $("<th class='td_head'><div>" + cell.k + "</div></th>");
+    }
+
+</script>
+
+</body>
+</html>

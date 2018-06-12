@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.singledog.websql.query.mapper.QueryLogMapper">
+
+    <select id="queryHistory" parameterType="map" >
+        select <include refid="all_columns"/> from query_log
+        <where>
+            <if test="param.userName != null">
+                and user_name like #{param.userName}
+            </if>
+            <if test="param.userEmail != null">
+                and user_email like #{param.userEmail}
+            </if>
+            <if test="param.tableName != null">
+                and table_name like #{param.tableName}
+            </if>
+            <if test="param.dbId != null">
+                and db_id = #{param.dbId}
+            </if>
+        </where>
+    </select>
+
+</mapper>

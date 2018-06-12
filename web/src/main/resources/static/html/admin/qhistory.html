@@ -1,0 +1,84 @@
+<body>
+    <table id="qhistory_list" style="width:80%;height:80%">
+    </table>
+    <div id="qhistory_list_tb">
+        <div style="margin: 10px">
+            数据库: <select id="qhistory_selectDB4Resource" class="easyui-combogrid" style="width:250px" />
+            表名: <input class="easyui-textbox" data-options="prompt:'数据库表名'" id="qhistory_tableName"/>
+            用户名: <input class="easyui-textbox" data-options="prompt:'用户名'" id="qhistory_username"/>
+            邮箱: <input class="easyui-textbox" data-options="prompt:'用户邮箱'" id="qhistory_email"/>
+            <a href="#" id="searchQhistory" class="easyui-linkbutton" data-options="iconCls:'icon-search',plain:true">查询</a>
+        </div>
+
+    </div>
+    <script>
+        $("#qhistory_selectDB4Resource").combogrid({
+            mode: 'remote',
+            url: '/admin/database/listnopage',
+            idField:'id',
+            textField:'dbName',
+            columns:[[
+                {field:'id',title:'ID', checkbox: true},
+                {field:'dbName',title:'数据库名称'},
+                {field:'url',title:'url'},
+                {field:'userName',title:'用户名'},
+                {field:'dbType',title:'类型'},
+                {field:'createUserName',title:'创建人'},
+                {field:'createTime',title:'创建时间'},
+                {field:'updateUserName',title:'更新人'},
+                {field:'updateTime',title:'更新时间'}
+            ]]
+        });
+
+
+        $('#qhistory_list').datagrid({
+            title: '查询历史',
+            url:'/admin/history/list',
+            columns:[[
+                {field:'id',title:'ID', checkbox: true},
+                {field:'userName',title:'用户名'},
+                {field:'userEmail',title:'用户邮箱'},
+                {field:'dbName',title:'数据库'},
+                {field:'tableName',title:'表名'},
+                {field:'sql',title:'SQL', width:400, formatter: function (value,row,index) {
+                    return "<span style='word-break: break-all; word-wrap: break-word; white-space: pre-wrap'>"+value+"</span>"
+                }},
+                {field:'costTime',title:'耗费时间'},
+                {field:'createTime',title:'查询时间'}
+            ]],
+            fit: true,
+            idField: 'id',
+            pagination:true,
+            rownumbers:true,
+            checkOnSelect: true,
+            selectOnCheck: true,
+            singleSelect: true,
+            toolbar: '#qhistory_list_tb'
+        });
+
+        var p_qhistory_list = $('#qhistory_list').datagrid('getPager');
+        $(p_qhistory_list).pagination({
+            pageSize: 30,//每页显示的记录条数，默认为10
+            pageList: [30,50,100],//可以设置每页记录条数的列表
+            beforePageText: '第',//页数文本框前显示的汉字
+            afterPageText: '页    共 {pages} 页',
+            displayMsg: '当前显示 {from} - {to} 条记录   共 {total} 条记录'
+        });
+
+        $("#searchQhistory").click(function(){
+            var param = {
+                tableName: $("#qhistory_tableName").val(),
+                dbId: $("#qhistory_selectDB4Resource").combogrid("getValue"),
+                userName: $("#qhistory_username").val(),
+                userEmail: $("#qhistory_email").val()
+            };
+
+            var select = $("#isViewSelect").val();
+            if (select != -1) {
+                param.isView = select;
+            }
+
+            $('#qhistory_list').datagrid("load", param);
+        });
+    </script>
+</body>

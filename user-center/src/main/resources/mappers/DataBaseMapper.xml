@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.singledog.websql.user.mapper.DatabaseMapper">
+
+    <select id="searchDatabase" parameterType="map">
+        select <include refid="all_columns"/> from data_base
+        <where>
+            <if test="name != null">
+                and db_name like #{name}
+            </if>
+            <if test="url != null">
+                and url like #{url}
+            </if>
+            <if test="type != null">
+                and db_type = #{type}
+            </if>
+            and del = 0
+        </where>
+    </select>
+
+    <update id="softDeleteById" parameterType="java.lang.Long">
+        update data_base set del = 1 where id=#{id}
+    </update>
+
+</mapper>
