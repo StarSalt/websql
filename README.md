@@ -12,7 +12,7 @@
 5. 打包 `mvn clean package -DskipTests`。
 6. 进入到target目录: `cd web/target`。
 7. 运行jar包： `java -jar web-1.0-SNAPSHOT.jar`。
-8. 访问地址 `http://localhost:8080`, 用户名密码为 `admin/Admin321`, 获取邮箱验证码, 输入之后即可登录!
+8. 访问地址 `http://localhost:8080`, 用户名密码为 `admin/Admin123`, 获取邮箱验证码, 输入之后即可登录!
 
 **PS. websql依赖了`https://github.com/wupeng1988/global-session`, global-session没有发布到maven仓库， 需要clone此项目本地install。
 如果单节点部署， 也可以不用此组件。**
