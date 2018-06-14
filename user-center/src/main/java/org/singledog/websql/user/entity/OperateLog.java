@@ -34,7 +34,7 @@ public class OperateLog implements DefaultPropertySupport {
     @Column(name = "event_name")
     private String eventName;
 
-    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
     @Column(name = "op_time")
     private Date opTime;
 

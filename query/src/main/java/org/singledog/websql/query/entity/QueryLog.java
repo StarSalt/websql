@@ -37,7 +37,7 @@ public class QueryLog implements DefaultPropertySupport {
     private String sql;
     @Column(name = "cost_time")
     private Long costTime;
-    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
     @Column(name = "create_time")
     private Date createTime;
 
