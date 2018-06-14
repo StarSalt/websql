@@ -46,7 +46,7 @@ public class AdminHistoryController {
 
         param.setTableName(StringUtil.emptyToNull(param.getTableName()));
         if (!StringUtils.isEmpty(param.getTableName())) {
-            param.setTableName(StringUtil.wrapLike(param.getUserEmail()));
+            param.setTableName(StringUtil.wrapLike(param.getTableName()));
         }
 
         PageRequest pageRequest = PageRequest.of(param.getPage(), param.getRows(), Sort.Direction.DESC, "createTime");
